@@ -1,11 +1,12 @@
+# ONLY_HEADER_STL_LOADER
 It is easy to use, only header, *.stl file loader.
 
-/***USAGE***/
+***USAGE***
 
-/* `#define STL_SHOW_ERRORS` before include, if you don't want to check the error. */
+* `#define STL_SHOW_ERRORS` before include, if you don't want to check the error. *
 
 ```c++
-#include "stl.h"
+#include "stl_loader.h"
 
 STL_HEADER stl_header;
 STL_TRIANGLE* triangles;
