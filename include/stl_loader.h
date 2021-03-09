@@ -29,7 +29,7 @@
 //    STL_TRIANGLE* triangles;
 //    attribute_byte_count* attributes;
 //
-//    if(stl_load_from_file("../files/DeLorean.STL", stl_header, triangles, attributes))
+//    if(!stl_load_from_file("../files/DeLorean.STL", stl_header, triangles, attributes))
 //    {
 //        /*check error*/
 //    }
@@ -46,6 +46,8 @@
 #ifndef STL_LOADER_ONLY_HEADER
 #define STL_LOADER_ONLY_HEADER
 
+#define STL_NODISCARD [[nodiscard]]
+
 #include <fstream>
 
 typedef struct _stl_triangle
@@ -57,7 +59,9 @@ typedef struct _stl_triangle
 
 } STL_TRIANGLE; //48 bytes
 
-typedef unsigned short int attribute_byte_count;      //2 bytes
+typedef unsigned short int attribute_byte_count;    //2 bytes -> actaually it has to be a member of _stl_triangle, 
+                                                    //but 2 bytes unsigned short is made 4 bytes in a struct which has got 4 bytes member. 
+                                                    //The reason is alignment.
 
 typedef struct _stl_header
 {
@@ -68,7 +72,7 @@ typedef struct _stl_header
 
 //
 
-bool stl_load_from_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles, attribute_byte_count*& attributes)
+STL_NODISCARD bool stl_load_from_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles, attribute_byte_count*& attributes) noexcept
 {
     std::ifstream file;
 
@@ -95,7 +99,37 @@ bool stl_load_from_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*&
     file.close();
 
 #ifdef STL_SHOW_ERRORS
-    printf("file cannot opened! [load_stl_header_from_file]");
+    printf("file cannot opened! [stl_load_from_file]");
+#endif
+
+    return false;
+}
+
+STL_NODISCARD bool stl_create_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles, attribute_byte_count*& attributes) noexcept
+{
+    std::ofstream file;
+
+    file.open(path, std::ios::out | std::ios::binary);
+    
+    if(file.is_open())
+    {
+        file.write(reinterpret_cast<char*>(&stl_header), sizeof(stl_header));
+        
+        for(unsigned int i = 0; i < stl_header.triangles_number; i++)
+        {
+            file.write(reinterpret_cast<char*>(&triangles[i]), sizeof(STL_TRIANGLE));
+            file.write(reinterpret_cast<char*>(&attributes[i]), sizeof(attribute_byte_count));
+        }
+
+        file.close();
+
+        return true;
+    }
+    
+    file.close();
+
+#ifdef STL_SHOW_ERRORS
+    printf("file cannot created! [stl_create_file]");
 #endif
 
     return false;
