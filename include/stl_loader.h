@@ -46,7 +46,9 @@
 #ifndef STL_LOADER_ONLY_HEADER
 #define STL_LOADER_ONLY_HEADER
 
+#if __cplusplus >= 20173L
 #define STL_NODISCARD [[nodiscard]]
+#endif //__cplusplus
 
 #include <fstream>
 
@@ -71,8 +73,10 @@ typedef struct _stl_header
 } STL_HEADER; //84 bytes
 
 //
-
-STL_NODISCARD bool stl_load_from_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles, attribute_byte_count*& attributes) noexcept
+#ifdef STL_NODISCARD
+STL_NODISCARD
+#endif
+bool stl_load_from_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles, attribute_byte_count*& attributes) noexcept
 {
     std::ifstream file;
 
@@ -105,7 +109,10 @@ STL_NODISCARD bool stl_load_from_file(const char* path, STL_HEADER& stl_header, 
     return false;
 }
 
-STL_NODISCARD bool stl_create_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles, attribute_byte_count*& attributes) noexcept
+#ifdef STL_NODISCARD
+STL_NODISCARD
+#endif
+bool stl_create_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles, attribute_byte_count*& attributes) noexcept
 {
     std::ofstream file;
 
