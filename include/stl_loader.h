@@ -23,25 +23,24 @@
 
 /* #define STL_SHOW_ERRORS before include if you don't want to check error. */
 
-/***USAGE***/
-//    
-//    STL_HEADER stl_header;
-//    STL_TRIANGLE* triangles;
-//    attribute_byte_count* attributes;
-//
-//    if(!stl_load_from_file("../files/DeLorean.STL", stl_header, triangles, attributes))
-//    {
-//        /*check error*/
-//    }
-//
-//    /*...*/
-//
-//    /*free memory*/
-//
-//    stl_free<STL_TRIANGLE>(triangles);
-//    stl_free<attribute_byte_count>(attributes);
-//
+#if 0
+/***USAGE***/ 
+	STL_HEADER stl_header;
+	STL_TRIANGLE* triangles;
+	
+	if(!stl_load_from_file("../files/DeLorean.STL", stl_header, triangles))
+	{
+		/*check error*/
+	}
+	
+	/*...*/
+	
+	/*free memory*/
+	
+	stl_free<STL_TRIANGLE>(triangles);
+	
 /********************/
+#endif
 
 #ifndef STL_LOADER_ONLY_HEADER
 #define STL_LOADER_ONLY_HEADER
@@ -52,18 +51,21 @@
 
 #include <fstream>
 
+//2 bytes unsigned short is made 4 bytes in a struct which has got 4 bytes member. 
+//The reason is alignment. #pragma pack(push, 2) changes struct alignment.
+
+#pragma pack(push, 2)
 typedef struct _stl_triangle
 {
     float normal_vector[3];               //12 bytes  x, y, z
     float vertex1[3];                     //12 bytes  x, y, z
     float vertex2[3];                     //12 bytes  x, y, z
     float vertex3[3];                     //12 bytes  x, y, z
+	unsigned short attribute_byte_count;  //2 bytes
 
-} STL_TRIANGLE; //48 bytes
-
-typedef unsigned short int attribute_byte_count;    //2 bytes -> actaually it has to be a member of _stl_triangle, 
-                                                    //but 2 bytes unsigned short is made 4 bytes in a struct which has got 4 bytes member. 
-                                                    //The reason is alignment.
+} STL_TRIANGLE; //50 bytes
+#pragma pack(pop)
+													
 
 typedef struct _stl_header
 {
@@ -76,7 +78,7 @@ typedef struct _stl_header
 #ifdef STL_NODISCARD
 STL_NODISCARD
 #endif
-bool stl_load_from_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles, attribute_byte_count*& attributes) noexcept
+bool stl_load_from_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles) noexcept
 {
     std::ifstream file;
 
@@ -87,12 +89,10 @@ bool stl_load_from_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*&
         file.read(reinterpret_cast<char*>(&stl_header), sizeof(stl_header));
         
         triangles = new STL_TRIANGLE[stl_header.triangles_number];
-        attributes = new attribute_byte_count[stl_header.triangles_number];
         
         for(unsigned int i = 0; i < stl_header.triangles_number; i++)
         {
             file.read(reinterpret_cast<char*>(&triangles[i]), sizeof(STL_TRIANGLE));
-            file.read(reinterpret_cast<char*>(&attributes[i]), sizeof(attribute_byte_count));
         }
 
         file.close();
@@ -112,7 +112,7 @@ bool stl_load_from_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*&
 #ifdef STL_NODISCARD
 STL_NODISCARD
 #endif
-bool stl_create_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles, attribute_byte_count*& attributes) noexcept
+bool stl_create_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& triangles) noexcept
 {
     std::ofstream file;
 
@@ -125,7 +125,6 @@ bool stl_create_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& tr
         for(unsigned int i = 0; i < stl_header.triangles_number; i++)
         {
             file.write(reinterpret_cast<char*>(&triangles[i]), sizeof(STL_TRIANGLE));
-            file.write(reinterpret_cast<char*>(&attributes[i]), sizeof(attribute_byte_count));
         }
 
         file.close();
@@ -142,7 +141,7 @@ bool stl_create_file(const char* path, STL_HEADER& stl_header, STL_TRIANGLE*& tr
     return false;
 }
 
-template<typename _Type>
+template<typename _Type = STL_TRIANGLE>
 void stl_free(_Type*& pointer_array)
 {
     delete[] pointer_array;
